@@ -1,5 +1,4 @@
-
-create a ```.env``` file on root
+create a `.env` file on root
 
 ```
 PORT=5000
@@ -10,7 +9,9 @@ SALT_ROUNDS=12
 ACCESS_TOKEN=b0a84f63ca4c182327aba9955603e1bf7251a328a2b19942dd8843ac2ca281b1377a54e5301102fc84f51f36935ee8b8ce1be0424dd274807ca9ddb1bcda605b
 REFRESH_TOKEN=daa278c9178d805ce584fa0cf927bc30967674be75d822670611cdc35acce9f457a3e32ff3a5c6cbde556a290c77cf5da459380990a5eb715ee0229af305e4de
 
-DATABASE_URL=mongodb+srv://Nisharga:aDj8QSwONIMYsWtK@cluster0.qemdz.mongodb.net/vahicle_management?retryWrites=true&w=majority  
+DATABASE_URL=MONGODB_URI
 ACCESS_TOKEN_EXPIRES_IN=86400
 REFRESH_TOKEN_EXPIRES_IN=186400
 ```
+
+S
