@@ -1,0 +1,418 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  // provider = "postgresql"
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+  // url      = env("DATABASE_URL")
+}
+
+enum RoleEnumType {
+  MANAGER
+  USER
+  DRIVER
+  ADMIN
+}
+
+enum ExpenseCategory {
+  FUEL
+  MAINTENANCE
+  TOLL
+  OTHER
+}
+
+enum IncomeType {
+  TRIP
+  ADDITIONAL_SERVICE
+  ADVERTISEMENT
+  OTHER
+}
+
+// User model
+model User {
+  id        String       @id @default(auto()) @map("_id") @db.ObjectId
+  user_id   String?
+  name      String
+  email     String       @unique
+  password  String
+  phone     String
+  avatar    String?
+  role      RoleEnumType @default(USER)
+  address   String
+  location  String
+  createAt  DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  vehicleProfiles VehicleProfile[]
+  salaries        Salary[]
+
+  @@map("users")
+}
+
+// model User {
+//   id        String       @id @default(auto()) @map("_id") @db.ObjectId
+//   name      String
+//   email     String       @unique
+//   password  String
+//   phone     String
+//   avatar    String?
+//   role      RoleEnumType @default(USER)
+//   address   String
+//   location  String
+//   createAt  DateTime     @default(now())
+//   updatedAt DateTime     @updatedAt
+
+//   vehicleProfiles VehicleProfile[]
+//   salaries        Salary[]
+
+//   @@map("users")
+// }
+
+// Vehicle model
+model Vehicle {
+  id               String       @id @default(auto()) @map("_id") @db.ObjectId
+  registrationNo   String
+  purchaseDate     DateTime
+  registrationDate DateTime?
+  color            String
+  mileage          Float
+  price            Float
+  tax              Float
+  seatCapacity     Int
+  vehicleType      VehicleType
+  brand            String
+  model            String
+  fuelType         FuelType
+  createAt         DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  trips            Trip[]
+  manageFuels      ManageFuel[]
+
+  @@map("vehicles")
+}
+
+// Trip model
+model Trip {
+  id             String     @id @default(auto()) @map("_id") @db.ObjectId
+  startLocation  String
+  endLocation    String
+  startTime      DateTime
+  passengerName  String
+  passengerPhone String
+  passengerCount Int
+  status         TripStatus @default(UPCOMMING)
+  tripPeriod     String
+  tripRent       Float
+  createAt       DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  //relationships 
+  vehicle_id String     @db.ObjectId
+  vehicle    Vehicle    @relation(fields: [vehicle_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  driver_id  String     @db.ObjectId
+  driver     Driver     @relation(fields: [driver_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  costs      Cost[]
+  tripCosts  TripCost[]
+
+  @@map("trips")
+}
+
+// Trip cost
+model TripCost {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  passengerName String
+  phone         String
+  trip_period   String
+  tollCost      Float?
+  parkingCost   Float?
+  startLocation String
+  description   String?
+  trip_id       String   @db.ObjectId
+  trip          Trip     @relation(fields: [trip_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("trip_costs")
+}
+
+// office cost
+model OfficeCost {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  cost_name   String
+  amount      Int
+  description String? // Optional description of the cost
+  createdAt   DateTime @default(now()) // Timestamp when the record was created
+  updatedAt   DateTime @updatedAt // Timestamp when the record was last updated
+
+  @@map("office_costs")
+}
+
+// accessory added
+model Accessory {
+  id             String      @id @default(auto()) @map("_id") @db.ObjectId
+  accessory_name String
+  quantity       Int
+  purchase_date  String
+  expire_date    String?
+  amount         Float
+  description    String? // Optional description of the accessory
+  createdAt      DateTime    @default(now()) // Timestamp when the record was created
+  updatedAt      DateTime    @updatedAt // Timestamp when the record was last updated
+  inventories    Inventory[]
+
+  @@map("accessories")
+}
+
+model driverSalary {
+  id          String        @id @default(auto()) @map("_id") @db.ObjectId
+  driver_id   String        @db.ObjectId // Foreign key referencing the employee receiving the salary
+  amount      Float // Amount of the salary
+  month       String
+  position    String
+  description String? // Optional description of the salary
+  status      SalaryProcess
+  driver      Driver        @relation(fields: [driver_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createdAt   DateTime      @default(now()) // Timestamp when the record was created
+  updatedAt   DateTime      @updatedAt // Timestamp when the record was last updated
+
+  @@map("driver_salaries")
+}
+
+// Cost model
+model Cost {
+  id               String          @id @default(auto()) @map("_id") @db.ObjectId
+  amount           Float
+  expense_category ExpenseCategory
+  inventory_id     String          @db.ObjectId
+
+  inventory   Inventory @relation(fields: [inventory_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  description String
+  createAt    DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // relationships 
+  trip_id String @db.ObjectId
+  trip    Trip   @relation(fields: [trip_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@map("costs")
+}
+
+// Inventory model
+model Inventory {
+  id           String    @id @default(auto()) @map("_id") @db.ObjectId
+  name         String
+  accessory_id String    @db.ObjectId
+  accessory    Accessory @relation(fields: [accessory_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  quantity     Int
+  description  String?
+  createAt     DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  costs        Cost[]
+
+  @@map("inventories")
+}
+
+// Salary model
+model Salary {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  amount      Float
+  description String
+  createAt    DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  //relationships 
+  user_id String @db.ObjectId
+  user    User   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@map("salaries")
+}
+
+model ManageFuel {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  vehicle_id     String   @db.ObjectId
+  vehicle        Vehicle  @relation(fields: [vehicle_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  fuel_type      FuelType
+  invoice_number Int
+  purchase_date  DateTime
+  amount         Float
+  ltr            Float
+
+  createAt  DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Income model
+model Income {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  amount      Float
+  // inventory_id String     @db.ObjectId
+  type        IncomeType
+  description String
+  createAt    DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  // relationships
+
+  @@map("incomes")
+}
+
+// Manaager model 
+model Manager {
+  id         String @id @default(auto()) @map("_id") @db.ObjectId
+  name       String
+  email      String @unique
+  phone      String
+  avatar     String
+  experience String
+}
+
+// Driver model
+model Driver {
+  id            String         @id @default(auto()) @map("_id") @db.ObjectId
+  name          String
+  user_id       String?
+  email         String         @unique
+  phone         String
+  avatar        String
+  experience    String
+  password      String         @default("12345678")
+  role          RoleEnumType   @default(DRIVER)
+  nid           String
+  license_no    String
+  address       String
+  createAt      DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  trips         Trip[]
+  driverSalarys driverSalary[]
+}
+
+// model Driver {
+//   id         String @id @default(auto()) @map("_id") @db.ObjectId
+//   name       String
+//   email      String @unique
+//   phone      String
+//   avatar     String
+//   experience String
+//   nid        String
+//   license_no String
+//   address    String
+
+//   createAt      DateTime       @default(now())
+//   updatedAt     DateTime       @updatedAt
+//   trips         Trip[]
+//   driverSalarys driverSalary[]
+// }
+
+// Vehicle model
+model VehicleProfile {
+  id                     String        @id @default(auto()) @map("_id") @db.ObjectId
+  vehicle_make           String
+  vehicleName            String
+  photo                  String
+  purchase_date          String
+  registeration_date     String
+  color                  String
+  registeration_validity String
+  present_km             String
+  mileage                String
+  price                  String
+  fuel_type              String
+  body_type              String
+  model_name             String
+  registration_no        String
+  engine_no              String
+  manufacturing_date     String
+  cubic_capacity         String
+  engine_capacity        String
+  sitting_capacity       String
+  chassis_no             String
+  userId                 String        @db.ObjectId
+  user                   User          @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  maintenances           Maintenance[]
+  createAt               DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+
+  @@map("vehicleProfiles")
+}
+
+// Maintenance task model
+model Maintenance {
+  id                  String         @id @default(auto()) @map("_id") @db.ObjectId
+  task                String
+  repair_shop_address String
+  expense             String
+  lastDone            DateTime
+  currentDate         DateTime
+  nextDue             DateTime
+  vehicleProfileId    String         @db.ObjectId
+  vehicleProfile      VehicleProfile @relation(fields: [vehicleProfileId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  createAt  DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("maintenances")
+}
+
+// Mobarak vai korben 
+model InventoryRequest {
+  id            String          @id @default(auto()) @map("_id") @db.ObjectId
+  title         String
+  approve_status       RequestStatus    @default(PENDING)
+  comment              String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  ManageRequest ManageRequest[]
+}
+
+// Mobarak vai korben
+model ManageRequest {
+  id                   String           @id @default(auto()) @map("_id") @db.ObjectId
+  inventory_request_id String           @db.ObjectId
+  inventoryRequest     InventoryRequest @relation(fields: [inventory_request_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  approve_status       RequestStatus    @default(PENDING)
+  comment              String?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+}
+
+enum RequestStatus {
+  APPROVE
+  PENDING
+  REJECT
+}
+
+// vehicle type enum
+enum VehicleType {
+  AC
+  NonAC
+  SlippingBus
+}
+
+//fuel type enum
+enum FuelType {
+  Petrol
+  Diesel
+  Electric
+  Hybrid
+}
+
+//trip status 
+enum TripStatus {
+  PENDING
+  COMPLETED
+  UPCOMMING
+}
+
+enum SalaryProcess {
+  PENDING
+  PROCESSING
+  DONE
+}
+
+//driver part 
